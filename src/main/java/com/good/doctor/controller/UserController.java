@@ -1,12 +1,11 @@
 package com.good.doctor.controller;
 
 import com.good.doctor.entity.User;
+import com.good.doctor.exception.DaoException;
 import com.good.doctor.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,8 +22,16 @@ public class UserController {
     }
 
     @GetMapping(value = "/getAll")
-    public List<User> getAll(){
+    public List<User> getAll() throws DaoException {
         return userService.getAll();
     }
+
+    @PostMapping(value = "/save")
+    public void save(@RequestBody User user) throws DaoException {
+        userService.addUser(user);
+    }
+
+    @GetMapping(value = "/getByEmail")
+    public User getByEmail(@RequestParam("email") String email) throws DaoException { return userService.getByEmail(email);}
 
 }

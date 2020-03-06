@@ -1,6 +1,7 @@
 package com.good.doctor.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,11 +37,11 @@ public class User implements Serializable {
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Europe/Paris")
     @Column(name="creation_date")
-    private Date creationDate;
+    private Date creationDate = new Date();
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Europe/Paris")
     @Column(name="last_modif_date")
-    private Date lastModifDate;
+    private Date lastModifDate = new Date();
 
     @OneToOne
     @JoinColumn(name = "id")
