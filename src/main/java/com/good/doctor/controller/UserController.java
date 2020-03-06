@@ -1,7 +1,8 @@
 package com.good.doctor.controller;
 
 import com.good.doctor.entity.User;
-import com.good.doctor.exception.DaoException;
+import com.good.doctor.exception.business.BusinessException;
+import com.good.doctor.exception.technical.TechnicalException;
 import com.good.doctor.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -22,16 +23,21 @@ public class UserController {
     }
 
     @GetMapping(value = "/getAll")
-    public List<User> getAll() throws DaoException {
+    public List<User> getAll() throws TechnicalException {
         return userService.getAll();
     }
 
-    @PostMapping(value = "/save")
-    public void save(@RequestBody User user) throws DaoException {
-        userService.addUser(user);
+    @PostMapping(value = "/new")
+    public void addUser(@RequestBody User user) throws TechnicalException, BusinessException {
+        userService.saveUser(user, true);
+    }
+
+    @PostMapping(value = "/update")
+    public void updateUser(@RequestBody User user) throws TechnicalException, BusinessException {
+        userService.saveUser(user, false);
     }
 
     @GetMapping(value = "/getByEmail")
-    public User getByEmail(@RequestParam("email") String email) throws DaoException { return userService.getByEmail(email);}
+    public User getByEmail(@RequestParam("email") String email) throws TechnicalException { return userService.getByEmail(email);}
 
 }
