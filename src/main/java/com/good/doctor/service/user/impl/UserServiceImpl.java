@@ -8,14 +8,20 @@ import com.good.doctor.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-@Service
+@Service("userService")
 @Slf4j
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
 
@@ -38,7 +44,7 @@ public class UserServiceImpl implements UserService {
                     userRepository.saveAndFlush(existedUser);
                 } else if(existedUser != null){
                     throw new BusinessException("User " + user.getEmail() + " already exists.");
-                } else if(existedUser == null){
+                } else {
                     throw new BusinessException("User " + user.getEmail() + " does not exist and cannot be updated.");
                 }
             }
@@ -96,5 +102,18 @@ public class UserServiceImpl implements UserService {
         if(updated){
             existingUser.setLastModifDate(new Date());
         }
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
+        User user = userRepository.getOneByEmail(s);
+        if(user == null){
+            throw new UsernameNotFoundException("Invalid username or password.");
+        }
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getLogin().getPassword(), getAuthority());
+    }
+
+    private List<GrantedAuthority> getAuthority() {
+        return Arrays.asList(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 }
