@@ -1,7 +1,9 @@
 package com.application.base.service.user.impl;
 
 import com.application.base.entity.User;
+import com.application.base.entity.UserInfo;
 import com.application.base.exception.business.BusinessException;
+import com.application.base.exception.technical.AuthenticationException;
 import com.application.base.exception.technical.DaoException;
 import com.application.base.repository.UserRepository;
 import com.application.base.service.user.UserService;
@@ -13,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -24,10 +27,12 @@ import java.util.List;
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder encoder;
 
     @Autowired
-    private UserServiceImpl(UserRepository userRepository){
+    private UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder encoder){
         this.userRepository = userRepository;
+        this.encoder = encoder;
     }
 
     @Override
@@ -40,7 +45,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                     userRepository.saveAndFlush(user);
                 } else if(existedUser != null && !isCreation){
                     log.info("Updating existing user");
-                    updateUserField(user, existedUser);
+                    updateUserField(existedUser.getEmail(), user.getUserInfo(), existedUser.getUserInfo());
                     userRepository.saveAndFlush(existedUser);
                 } else if(existedUser != null){
                     throw new BusinessException("User " + user.getEmail() + " already exists.");
@@ -75,26 +80,39 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
-    private void updateUserField(User newUser, User existingUser){
+    @Override
+    public void updatePassword(String email, String lastPassword, String newPassword) throws AuthenticationException {
+        User user = userRepository.getOneByEmail(email);
+        String encodeLastPassword = encoder.encode(lastPassword);
+        if(user.getPassword().equals(encodeLastPassword)){
+            String encodedNewPassword = encoder.encode(newPassword);
+            userRepository.savePassword(email, encodedNewPassword);
+        } else {
+            throw new AuthenticationException("Last password incorrect");
+        }
+
+    }
+
+    private void updateUserField(String email, UserInfo newUser, UserInfo existingUser){
         boolean updated = false;
 
         if(!existingUser.getBirthDate().equals(newUser.getBirthDate())){
-            log.info("Birth date updated for user {}", existingUser.getEmail());
+            log.info("Birth date updated for user {}", email);
             existingUser.setBirthDate(newUser.getBirthDate());
             updated = true;
         }
         if(!existingUser.getFirstName().equals(newUser.getFirstName())){
-            log.info("First Name updated for user {}", existingUser.getEmail());
+            log.info("First Name updated for user {}", email);
             existingUser.setFirstName(newUser.getFirstName());
             updated = true;
         }
         if(!existingUser.getLastName().equals(newUser.getLastName())){
-            log.info("Last name updated for user {}", existingUser.getEmail());
+            log.info("Last name updated for user {}", email);
             existingUser.setLastName(newUser.getLastName());
             updated = true;
         }
         if(!existingUser.getPhoneNumber().equals(newUser.getPhoneNumber())){
-            log.info("Phone number updated for user {}", existingUser.getEmail());
+            log.info("Phone number updated for user {}", email);
             existingUser.setPhoneNumber(newUser.getPhoneNumber());
             updated = true;
         }
@@ -110,7 +128,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         if(user == null){
             throw new UsernameNotFoundException("Invalid username or password.");
         }
-        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getLogin().getPassword(), getAuthority());
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), getAuthority());
     }
 
     private List<GrantedAuthority> getAuthority() {

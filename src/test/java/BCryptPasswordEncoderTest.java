@@ -7,7 +7,7 @@ public class BCryptPasswordEncoderTest {
 
     @Test
     public void encryptPassword(){
-        String password="password";
+        String password="try";
         bCryptPasswordEncoder = new BCryptPasswordEncoder();
         String encodedPassword = bCryptPasswordEncoder.encode(password);
         System.out.println(encodedPassword);
